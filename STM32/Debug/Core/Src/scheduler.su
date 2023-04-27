@@ -1,0 +1,8 @@
+../Core/Src/scheduler.c:19:6:SCH_Init	4	static
+../Core/Src/scheduler.c:24:5:SCH_Add_Task	32	static
+../Core/Src/scheduler.c:47:6:SCH_Update	16	static
+../Core/Src/scheduler.c:58:6:SCH_Dispatch	16	static
+../Core/Src/scheduler.c:70:6:SCH_Delete_Task	32	static
+../Core/Src/scheduler.c:83:6:SelfDestruct	32	static
+../Core/Src/scheduler.c:100:5:number_current_task	4	static
+../Core/Src/scheduler.c:103:6:SCH_Report_Status	4	static

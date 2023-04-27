@@ -1,0 +1,5 @@
+../Core/Src/Controller.c:21:9:isOK	16	static
+../Core/Src/Controller.c:25:6:processMessage	24	static
+../Core/Src/Controller.c:81:6:ResendMessage	8	static
+../Core/Src/Controller.c:91:6:ControllerInit	8	static
+../Core/Src/Controller.c:98:6:SendValue	16	static

@@ -1,0 +1,3 @@
+../Core/Src/task.c:11:6:TurnOn	8	static
+../Core/Src/task.c:15:6:TurnOff	8	static
+../Core/Src/task.c:19:6:ToggleLed	8	static

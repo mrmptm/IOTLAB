@@ -1,0 +1,3 @@
+../Core/Src/MQ9.c:10:7:Int_to_Volt	16	static
+../Core/Src/MQ9.c:14:7:ReadMQ9	40	static
+../Core/Src/MQ9.c:27:6:SendValueMQ9	48	static

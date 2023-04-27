@@ -1,0 +1,2 @@
+../Core/Src/DHT12.c:17:19:ReadDHT	32	static
+../Core/Src/DHT12.c:39:6:SendValueDHT	40	static
