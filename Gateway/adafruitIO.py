@@ -22,7 +22,7 @@ except ImportError:
     subprocess.check_call(['pip', 'install', 'ping3'])
 
 AIO_USERNAME = "MrMPTM"
-AIO_KEY = "aio_echm43qekfAXI2AI7uqU9Yn4KBoi"
+AIO_KEY = "aio_pAJp34ikIRoCu8gtE7mmyWRYl1Yu"
 
 feed_available = False
 send_startTime = 0
@@ -91,7 +91,8 @@ def disconnected(client):
 def message(client, feed_id, payload):
     global needToCheckConnection
     global send_TimeOut
-    print("Nhan du lieu: ", payload, ", feed id: ", feed_id)
+    # print("Nhan du lieu: ", payload, ", feed id: ", feed_id)
+    print("Nhan du lieu: ", payload, ", feed id: ", feed_id, " at",str(time.perf_counter()))
     if feeds_to_subscribe['system-button'] == feed_id:
         processSystemButton(payload)
     else:
@@ -156,7 +157,7 @@ def SendDatawithPeriod(feed_name, payload, period, qos=0):
     if duration(start_time) >= period * 1000:
         feed_timer[feed_name] = time.perf_counter()
         client.publish(feeds_to_publish[feed_name], payload, qos=qos)
-        print("Publishing value", payload, "to", feed_name)
+        print("Publishing value", payload, "to", feed_name, " at:",str(time.perf_counter()))
         raiseAttention(feed_name)
 
 
@@ -165,7 +166,8 @@ def SendData(feed_name, qos=0):
     if not feedAvaiable() or not adafruitIsConnected():
         return
     client.publish(feeds_to_publish[feed_name], feed_payload[feed_name], qos=qos)
-    print("Publishing value", feed_payload[feed_name], "to", feed_name)
+    # print("Publishing value", feed_payload[feed_name], "to", feed_name)
+    print("Publishing value", feed_payload[feed_name], "to", feed_name," at:",str(time.perf_counter()))
     raiseAttention(feed_name)
 
 
@@ -229,6 +231,7 @@ def EnsureConnection():
             raiseAttention(feed_name)
             # Decrease time to live
             ControlBuffer[feed_name].DecreaseTimeToLive()
+            timeCalculator.UpdateTimerParam(duration(send_startTime))
             if ControlBuffer[feed_name].isDead():
                 ControlBuffer.pop(feed_name)
 
@@ -250,7 +253,7 @@ class TimeCalculator:
     def __init__(self):
         self.enable = False
         self.RTT = None
-        self.devRTT = 0
+        self.devRTT = 100
         self.TimeOut = None
         self.alpha = 0.125
         self.beta = 0.25
