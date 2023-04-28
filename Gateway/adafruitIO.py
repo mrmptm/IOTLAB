@@ -21,8 +21,8 @@ try:
 except ImportError:
     subprocess.check_call(['pip', 'install', 'ping3'])
 
-AIO_USERNAME = "MrMPTM"
-AIO_KEY = "aio_pAJp34ikIRoCu8gtE7mmyWRYl1Yu"
+AIO_USERNAME = "USER_NAME"
+AIO_KEY = "AIO_KEY"
 
 feed_available = False
 send_startTime = 0
