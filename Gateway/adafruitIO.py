@@ -92,7 +92,7 @@ def message(client, feed_id, payload):
     global needToCheckConnection
     global send_TimeOut
     # print("Nhan du lieu: ", payload, ", feed id: ", feed_id)
-    print("Nhan du lieu: ", payload, ", feed id: ", feed_id, " at",str(time.perf_counter()))
+    print("Nhan du lieu: ", payload, ", feed id: ", feed_id, " at", str(time.perf_counter()))
     if feeds_to_subscribe['system-button'] == feed_id:
         processSystemButton(payload)
     else:
@@ -157,7 +157,7 @@ def SendDatawithPeriod(feed_name, payload, period, qos=0):
     if duration(start_time) >= period * 1000:
         feed_timer[feed_name] = time.perf_counter()
         client.publish(feeds_to_publish[feed_name], payload, qos=qos)
-        print("Publishing value", payload, "to", feed_name, " at:",str(time.perf_counter()))
+        print("Publishing value", payload, "to", feed_name, " at:", str(time.perf_counter()))
         raiseAttention(feed_name)
 
 
@@ -167,7 +167,7 @@ def SendData(feed_name, qos=0):
         return
     client.publish(feeds_to_publish[feed_name], feed_payload[feed_name], qos=qos)
     # print("Publishing value", feed_payload[feed_name], "to", feed_name)
-    print("Publishing value", feed_payload[feed_name], "to", feed_name," at:",str(time.perf_counter()))
+    print("Publishing value", feed_payload[feed_name], "to", feed_name, " at:", str(time.perf_counter()))
     raiseAttention(feed_name)
 
 
@@ -186,8 +186,6 @@ def raiseAttention(feed_name):
     send_startTime = time.perf_counter()
     if feedAvaiable():
         AddToControlBuffer(feed_name, send_startTime)
-    if needToCheckConnection is True:
-        return
     needToCheckConnection = True
 
 
@@ -199,41 +197,59 @@ def EnsureConnection():
     global connectReqIsSent
     global needToCheckConnection
     global timeCalculator
+    global ControlBuffer
+    response_time = True
     if not needToCheckConnection:
         return
-    # Check wifi connection first
-    if duration(send_startTime) < send_TimeOut:
-        return
-    print("TIME OUT")
-    response_time = ping3.ping("google.com")
-    if response_time == False:
-        connecting = False  # There is no wifi, the connection to adafruitIO must be disconnected too
-        feed_available = False
-        connectReqIsSent = False
-        client.setDisConnect()
-        ControlBuffer.clear()
-        timeCalculator.setDisabled()
-        feed_payload["system-button"] ="1"
-        return
-    elif connecting is False:  # There is wifi but there is no connection to adafruitIO -> Connect
-        if connectReqIsSent:  # If connect message is sent, wait for it
+    feedToProcess = getTimeOutFeed()
+    if len(feedToProcess) > 0 or duration(send_startTime) >= send_TimeOut:
+        print("TIME OUT")
+        # Check internet connection first
+        response_time = ping3.ping("google.com")
+        if response_time is False:
+            # There is no wifi, the connection to adafruitIO must be disconnected too
+            setDisConnectState()
+            feed_payload["system-button"] = "1"
             return
-        print("Try to connect to adafruitIO")
-        client.connect()
-        client.loop_background()
-        connectReqIsSent = True
-    elif connecting is True and feedAvaiable():  # The problem cause by packet lost
-        feed_names = list(ControlBuffer.keys())
-        for feed_name in feed_names:
-            # Resend payload of this feed
-            client.publish(feeds_to_publish[feed_name], feed_payload[feed_name])
-            print("Re-publishing value", feed_payload[feed_name], "to", feed_name)
-            raiseAttention(feed_name)
-            # Decrease time to live
-            ControlBuffer[feed_name].DecreaseTimeToLive()
-            timeCalculator.UpdateTimerParam(duration(send_startTime))
-            if ControlBuffer[feed_name].isDead():
-                ControlBuffer.pop(feed_name)
+        elif connecting is False:  # There is internet connection but there is no connection to adafruitIO -> Connect
+            if connectReqIsSent:  # If connect message is sent, wait for it
+                return
+            print("Try to connect to adafruitIO")
+            client.connect()
+            client.loop_background()
+            connectReqIsSent = True
+        elif connecting is True and feedAvaiable():  # The problem cause by packet lost
+            for feed_name in feedToProcess:
+                timeCalculator.UpdateTimerParam(duration(feedToProcess[feed_name].startTime))  # Widen timeout interval
+                client.publish(feeds_to_publish[feed_name], feed_payload[feed_name])
+                print("Re-publishing value", feed_payload[feed_name], "to", feed_name)
+                raiseAttention(feed_name)
+                # Decrease time to live
+                ControlBuffer[feed_name].DecreaseTimeToLive()
+                if ControlBuffer[feed_name].isDead():
+                    ControlBuffer.pop(feed_name)
+
+
+def setDisConnectState():
+    global connecting
+    global feed_available
+    global client
+    global ControlBuffer
+    global timeCalculator
+    connecting = False
+    feed_available = False
+    client.setDisConnect()
+    ControlBuffer.clear()
+    timeCalculator.setDisabled()
+
+
+def getTimeOutFeed():
+    timeoutbuffer = {}
+    for feed_name in ControlBuffer:
+        if duration(ControlBuffer[feed_name].startTime) < send_TimeOut:
+            continue
+        timeoutbuffer[feed_name] = ControlBuffer[feed_name]
+    return timeoutbuffer
 
 
 class feedController:
@@ -253,12 +269,13 @@ class TimeCalculator:
     def __init__(self):
         self.enable = False
         self.RTT = None
-        self.devRTT = 100
+        self.devRTT = 50
         self.TimeOut = None
         self.alpha = 0.125
         self.beta = 0.25
 
     def UpdateTimerParam(self, newRTT):
+        print(newRTT)
         if self.enable is False:
             return
         if self.RTT is None:
@@ -268,6 +285,7 @@ class TimeCalculator:
 
         self.devRTT = (1 - self.beta) * self.devRTT + self.beta * abs(newRTT - self.RTT)
         self.TimeOut = self.RTT + 4 * self.devRTT
+        print(self.TimeOut)
 
     def getSuggestedTimeOut(self):
         return self.TimeOut
