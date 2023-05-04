@@ -7,8 +7,8 @@ import sys
 import numpy as np
 import ping3
 
-AIO_USERNAME = "MrMPTM"
-AIO_KEY = "aio_LbJB158XDxltGptDa7B5mvh23amM"
+AIO_USERNAME = "USER_NAME"
+AIO_KEY = "AIO_KEY"
 
 feed_available = False
 send_startTime = 0
@@ -131,7 +131,7 @@ def getLastValue(feedBuffer):
 
 
 def HTTPContent():
-    return "https://io.adafruit.com/api/v2/MrMPTM/feeds/" + "?x-aio-key=" + AIO_KEY
+    return "https://io.adafruit.com/api/v2/"+AIO_USERNAME+"/feeds/" + "?x-aio-key=" + AIO_KEY
 
 
 def SendDatawithPeriod(feed_name, payload, period, qos=0):
