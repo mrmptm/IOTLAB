@@ -20,7 +20,7 @@
 #define WAIT_REQ 1
 #define WAIT_ACK 2
 #define ABORT_RESEND 3
-#define TIMEOUT_ACK 1000
+#define TIMEOUT_ACK 500
 
 #define READ_SENSOR 1
 #define NONE 0

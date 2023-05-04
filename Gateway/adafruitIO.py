@@ -1,28 +1,14 @@
-import subprocess
 import time
 import requests
 
-try:
-    from Adafruit_IO import MQTTClient, Client, Dashboard
-except ImportError:
-    subprocess.check_call(['pip', 'install', 'adafruit-io'])
-try:
-    import sys
-except ImportError:
-    subprocess.check_call(['pip', 'install', 'sys'])
 
-try:
-    import numpy as np
-except ImportError:
-    subprocess.check_call(['pip', 'install', 'numpy'])
+from Adafruit_IO import MQTTClient, Client, Dashboard
+import sys
+import numpy as np
+import ping3
 
-try:
-    import ping3
-except ImportError:
-    subprocess.check_call(['pip', 'install', 'ping3'])
-
-AIO_USERNAME = "USER_NAME"
-AIO_KEY = "AIO_KEY"
+AIO_USERNAME = "MrMPTM"
+AIO_KEY = "aio_LbJB158XDxltGptDa7B5mvh23amM"
 
 feed_available = False
 send_startTime = 0
@@ -198,12 +184,10 @@ def EnsureConnection():
     global needToCheckConnection
     global timeCalculator
     global ControlBuffer
-    response_time = True
     if not needToCheckConnection:
         return
     feedToProcess = getTimeOutFeed()
     if len(feedToProcess) > 0 or duration(send_startTime) >= send_TimeOut:
-        print("TIME OUT")
         # Check internet connection first
         response_time = ping3.ping("google.com")
         if response_time is False:
@@ -227,6 +211,7 @@ def EnsureConnection():
                 # Decrease time to live
                 ControlBuffer[feed_name].DecreaseTimeToLive()
                 if ControlBuffer[feed_name].isDead():
+                    print("Abort", str(feed_name))
                     ControlBuffer.pop(feed_name)
 
 
@@ -269,13 +254,12 @@ class TimeCalculator:
     def __init__(self):
         self.enable = False
         self.RTT = None
-        self.devRTT = 50
+        self.devRTT = 10
         self.TimeOut = None
         self.alpha = 0.125
         self.beta = 0.25
 
     def UpdateTimerParam(self, newRTT):
-        print(newRTT)
         if self.enable is False:
             return
         if self.RTT is None:
@@ -285,8 +269,6 @@ class TimeCalculator:
 
         self.devRTT = (1 - self.beta) * self.devRTT + self.beta * abs(newRTT - self.RTT)
         self.TimeOut = self.RTT + 4 * self.devRTT
-        print(self.TimeOut)
-
     def getSuggestedTimeOut(self):
         return self.TimeOut
 

@@ -1,19 +1,10 @@
-import subprocess
-
-try:
-    import serial.tools.list_ports
-except ImportError:
-    subprocess.check_call(['pip', 'install', 'pyserial'])
-try:
-    import sys
-except ImportError:
-    subprocess.check_call(['pip', 'install', 'sys'])
-
+import serial.tools.list_ports
+import sys
 from adafruitIO import feed_payload, SendData
 import time
 
 FAIL_LIMIT = 5
-TIME_OUT = 1000
+TIME_OUT = 500
 # sensor code
 TEMP_HUMID = 0
 MQ9 = 1
@@ -119,7 +110,6 @@ class Controller:
     def ReadData(self, period, sensorType, qos=0):
         if not self.enable:
             return
-
         global seq
         global feed_names
         try:
@@ -144,12 +134,10 @@ class Controller:
                     self.mess = ""
                     self.lastContent = self.packageContent(REQUEST, sensorType, seq, FAIL_LIMIT, 0)
                     writeBytes(self.ser, self.lastContent)
-                    # print(self.lastContent)
                     self.state = WAIT_DATA
                     self.start_time = startTimer()
                     self.feed_names = []
                     print("REQUEST DATA")
-                    # print(self.lastContent)
             if self.state == WAIT_DATA:
                 while True:
                     success, bytesToRead = readSerial(self.ser)
@@ -157,11 +145,12 @@ class Controller:
                         new_mess = self.ser.read(bytesToRead).decode("UTF-8")
                         self.mess = self.mess + new_mess
                         ret, completedMess, remainedMess = self.getCompletedMessage(self.mess)
-                        # print(completedMess)
                         if not ret:  # there is wrong-format sub-mess
-                            self.lastContent = self.packageContent(RESPONSE, sensorType, seq, FAIL_LIMIT, ACK)
+                            self.lastContent = self.packageContent(RESPONSE, sensorType, seq, FAIL_LIMIT, NAK)
                             writeBytes(self.ser, self.lastContent)
                             self.start_time = startTimer()
+                            wait(500)  # Wait for other packets to be fully loaded to buffer
+                            self.ser.read(bytesToRead).decode("UTF-8")  # Get remaining message out of buffer
                             remainedMess = ""  # Clear mess
                         elif len(completedMess):  # analyze completed message
                             ret, isLastMessage = self.decodeMessage(completedMess)
@@ -185,6 +174,7 @@ class Controller:
                                 writeBytes(self.ser, self.lastContent)
                                 # All packet ACK, start uploading value to adafruit
                                 for feed_name in self.feed_names:
+                                    # print(str(feed_name),":",str(feed_payload[feed_name]))
                                     SendData(feed_name)
                                 ##################################################
                                 self.start_time = startTimer()

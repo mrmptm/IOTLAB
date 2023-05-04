@@ -46,6 +46,7 @@ void processMessage(Message msg){
 						cseq=msg.seq;
 						ReadMQ9(&adc);
 						SendValueMQ9(&huart, msg.seq);
+						SCH_Add_Task(ResendMessage, TIMEOUT_ACK, TIMEOUT_ACK);
 						timeOutCount=0;
 						timeOutLimit=msg.failLimit;
 						state=WAIT_ACK;
